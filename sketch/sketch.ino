@@ -145,12 +145,24 @@ void loop()
   //
   // Auto topoff
   //
-  if( ReefAngel.DisplayedMenu != WATERCHANGE_MODE && !ReefAngel.HighATO.IsActive() ) {//Only run ATO if not in waterchange mode
+  if( ReefAngel.DisplayedMenu != WATERCHANGE_MODE && !ReefAngel.HighATO.IsActive() && ReefAngel.Params.PH < 850 ) {//Only run ATO if not in waterchange mode and PH < 8.5
+    
     if( ReefAngel.LowATO.IsActive() ){ //ATO on until low switch is active
+      
       ReefAngel.Relay.On(Port7);
-    }else if( hour() >= 20 || hour() < 12 && minute() <= 2 && ReefAngel.Params.PH <= 810  ){ //Dose Kalk for 5 minutes every hour
+      
+    }else if( (hour() >= 20 || hour() < 12) && minute() == 0 && second() < 31 && (ReefAngel.Params.PH <= 830)  ){ 
+      
+      //Dose Kalk for 30 seconds every hour between 8pm and 12pm
+      //30sec for 16 hours @ 3.5gal/hr = 0.46666 Gal/day
       ReefAngel.Relay.On(Port7);
+      
+    }else {
+      ReefAngel.Relay.Off(Port7);
     }
+    
+  }else {
+      ReefAngel.Relay.Off(Port7);
   }
 
   //Never run ATO if high switch is active
