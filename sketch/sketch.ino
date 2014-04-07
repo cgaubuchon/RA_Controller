@@ -30,6 +30,7 @@
 #define Mem_UV_Max       100
 #define Mem_White_Max    101
 #define Mem_Blue_Max     102
+#define Kalk_Dose_Interval     103
 
 int sunrise_min = 30;
 int sunrise_hour = 7;
@@ -48,6 +49,7 @@ void initMemory(){
   InternalMemory.write(Mem_UV_Max,30);
   InternalMemory.write(Mem_White_Max, 40);
   InternalMemory.write(Mem_Blue_Max, 25);
+  InternalMemory.write(Kalk_Dose_Interval, 59);
 
 }
 
@@ -151,10 +153,10 @@ void loop()
       
       ReefAngel.Relay.On(Port7);
       
-    }else if( (hour() >= 20 || hour() < 12) && minute() == 0 && second() < 31 && (ReefAngel.Params.PH <= 830)  ){ 
+    }else if( (hour() >= 20 || hour() < 12) && minute() == 0 && second() < InternalMemory.read(Kalk_Dose_Interval) && (ReefAngel.Params.PH <= 828)  ){ 
       
       //Dose Kalk for 30 seconds every hour between 8pm and 12pm
-      //30sec for 16 hours @ 3.5gal/hr = 0.46666 Gal/day
+      //59sec for 16 hours @ 3.5gal/hr = 0.917777568 Gal/day
       ReefAngel.Relay.On(Port7);
       
     }else {
