@@ -116,12 +116,11 @@ void loop()
       ReefAngel.PWM.SetChannel( 1, PWMParabola(sunrise_hour, sunrise_min, sunset_hour, sunset_min, 10, white_max, 10) ); //White
     }
 
-    //BLUE
-    if(PWMParabola(sunrise_hour-1, sunrise_min-30, sunset_hour+2, sunset_min+30, 10, blue_max, 20) < 11){
+    if(PWMParabola(sunrise_hour-2, sunrise_min, sunset_hour+2, sunset_min+30, 10, blue_max, 20) < 11){
       ReefAngel.PWM.SetChannel( 2,  0);
     }
     else{
-      ReefAngel.PWM.SetChannel( 2,  PWMParabola(sunrise_hour-1, sunrise_min-30, sunset_hour+2, sunset_min+30, 10, blue_max, 10)); //UV
+      ReefAngel.PWM.SetChannel( 2,  PWMParabola(sunrise_hour-2, sunrise_min, sunset_hour+2, sunset_min+30, 10, blue_max, 10)); //UV
     }
 
 
