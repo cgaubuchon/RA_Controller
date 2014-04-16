@@ -32,17 +32,7 @@
 #define Mem_Blue_Max     102
 #define Kalk_Dose_Interval     103
 
-#define Lights_On_Hour     204
-#define Lights_On_Minute     205
-
-#define Lights_Off_Hour     206
-#define Lights_Off_Minute     207
-
 int current_day = 0;
-
-int uv_max = 30;
-int white_max = 100;
-int blue_max = 50;
 
 void initMemory(){
 
@@ -51,11 +41,10 @@ void initMemory(){
   InternalMemory.write(Mem_Blue_Max, 25);
   InternalMemory.write(Kalk_Dose_Interval, 59);
   
-  InternalMemory.write(Lights_On_Hour, 7);
-  InternalMemory.write(Lights_On_Minute, 30);
-  
-  InternalMemory.write(Lights_Off_Hour, 18);
-  InternalMemory.write(Lights_Off_Minute, 0);
+  InternalMemory.StdLightsOnHour_write( 7 );
+  InternalMemory.StdLightsOnMinute_write( 30 );
+  InternalMemory.StdLightsOffHour_write( 18 );
+  InternalMemory.StdLightsOffMinute_write( 0 );
 
 }
 
@@ -106,10 +95,10 @@ void loop()
   int white_max = InternalMemory.read(Mem_White_Max);
   int blue_max = InternalMemory.read(Mem_Blue_Max);
   
-  int sunrise_min = InternalMemory.read(Lights_On_Minute);
-  int sunrise_hour = InternalMemory.read(Lights_On_Hour);
-  int sunset_min = InternalMemory.read(Lights_Off_Hour);
-  int sunset_hour = InternalMemory.read(Lights_Off_Minute);
+  int sunrise_min = InternalMemory.StdLightsOnHour_read();
+  int sunrise_hour = InternalMemory.StdLightsOnMinute_read();
+  int sunset_min = InternalMemory.StdLightsOffHour_read();
+  int sunset_hour = InternalMemory.StdLightsOffHour_read();
 
   if( bitRead( ReefAngel.StatusFlags, LightsOnFlag ) ){ //Turn on lights to 'full'
     ReefAngel.PWM.SetChannel( 0,  uv_max); //UV
@@ -149,8 +138,7 @@ void loop()
     //Fuge Light
     if( hour() >= sunset_hour || hour() < sunrise_hour-2 ){
       ReefAngel.Relay.On( Port4 );
-    }
-    else{
+    }else{
       ReefAngel.Relay.Off( Port4 );
     }
   }
