@@ -104,8 +104,7 @@ void loop()
     ReefAngel.PWM.SetChannel( 0,  uv_max); //UV
     ReefAngel.PWM.SetChannel( 1,  white_max); //White
     ReefAngel.PWM.SetChannel( 2,  blue_max); //Blue
-    ReefAngel.Relay.On( Port4 ); //Fuge light
-  
+    
   }else{
 
     //Turn off drivers completely if less than the lowest possible output to lengthen lifespan of LEDs and drivers
@@ -133,13 +132,7 @@ void loop()
     else{
       ReefAngel.PWM.SetChannel( 0, 0 );
     }
-
-    //Fuge Light
-    if( hour() >= sunset_hour || hour() < sunrise_hour-2 ){
-      ReefAngel.Relay.On( Port4 );
-    }else{
-      ReefAngel.Relay.Off( Port4 );
-    }
+    
   }
 
   //
@@ -171,8 +164,8 @@ void loop()
   }
 
   //Temp settings
-  ReefAngel.StandardHeater(Port6, 730, 765);
-  ReefAngel.StandardHeater(Port8, 730, 765);
+  ReefAngel.StandardHeater(Port6, 730, 745);
+  ReefAngel.StandardHeater(Port8, 730, 745);
 
 
   // This should always be the last line
