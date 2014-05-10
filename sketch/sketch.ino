@@ -36,15 +36,19 @@ int current_day = 0;
 
 void initMemory(){
 
-  InternalMemory.write(Mem_UV_Max,30);
+  InternalMemory.write(Mem_UV_Max, 35);
   InternalMemory.write(Mem_White_Max, 40);
-  InternalMemory.write(Mem_Blue_Max, 25);
+  InternalMemory.write(Mem_Blue_Max, 30);
+  
   InternalMemory.write(Kalk_Dose_Interval, 59);
   
   InternalMemory.StdLightsOnHour_write( 7 );
   InternalMemory.StdLightsOnMinute_write( 30 );
   InternalMemory.StdLightsOffHour_write( 18 );
   InternalMemory.StdLightsOffMinute_write( 0 );
+  
+  InternalMemory.HeaterTempOn_write( 745 );
+  InternalMemory.HeaterTempOff_write( 755 );
 
 }
 
@@ -70,17 +74,15 @@ void setup()
   ReefAngel.TempProbe = T1_PROBE;
   ReefAngel.OverheatProbe = T1_PROBE;
   // Set the Overheat temperature setting
-  InternalMemory.OverheatTemp_write( 869 );
+  InternalMemory.OverheatTemp_write( 810 );
 
   // Ports that are always on, all of them for now
   ReefAngel.Relay.On( Port1 );
   ReefAngel.Relay.On( Port2 );
   ReefAngel.Relay.On( Port3 );
-  ReefAngel.Relay.On( Port5 );
+  ReefAngel.Relay.On( Port4 );
   ReefAngel.Relay.On( Port6 );
-  //ReefAngel.Relay.On( Port7 ); //ATO Port
-  ReefAngel.Relay.On( Port8 );
-
+  
   initMemory();
 
 }
@@ -101,6 +103,7 @@ void loop()
   int sunset_hour = InternalMemory.StdLightsOffHour_read();
 
   if( bitRead( ReefAngel.StatusFlags, LightsOnFlag ) ){ //Turn on lights to 'full'
+    
     ReefAngel.PWM.SetChannel( 0,  uv_max); //UV
     ReefAngel.PWM.SetChannel( 1,  white_max); //White
     ReefAngel.PWM.SetChannel( 2,  blue_max); //Blue
@@ -164,8 +167,8 @@ void loop()
   }
 
   //Temp settings
-  ReefAngel.StandardHeater(Port6, 730, 745);
-  ReefAngel.StandardHeater(Port8, 730, 745);
+  ReefAngel.StandardHeater(Port5, InternalMemory.HeaterTempOn_read(), InternalMemory.HeaterTempOff_read());
+  ReefAngel.StandardHeater(Port8, InternalMemory.HeaterTempOn_read(), InternalMemory.HeaterTempOff_read());
 
 
   // This should always be the last line
