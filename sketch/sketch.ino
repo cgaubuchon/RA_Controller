@@ -25,155 +25,107 @@
 #include <AI.h>
 #include <PH.h>
 #include <WaterLevel.h>
+#include <Humidity.h>
+#include <DCPump.h>
+#include <PAR.h>
 #include <ReefAngel.h>
 
-#define Mem_UV_Max       100
-#define Mem_White_Max    101
-#define Mem_Blue_Max     102
+////// Place global variable code below here
+
 #define Kalk_Dose_Interval     103
 
-int current_day = 0;
-
+////// Place global variable code above here
 void initMemory(){
 
-  InternalMemory.write(Mem_UV_Max, 35);
-  InternalMemory.write(Mem_White_Max, 40);
-  InternalMemory.write(Mem_Blue_Max, 30);
-  
   InternalMemory.write(Kalk_Dose_Interval, 59);
   
-  InternalMemory.StdLightsOnHour_write( 7 );
-  InternalMemory.StdLightsOnMinute_write( 30 );
-  InternalMemory.StdLightsOffHour_write( 18 );
-  InternalMemory.StdLightsOffMinute_write( 0 );
-  
-  InternalMemory.HeaterTempOn_write( 745 );
-  InternalMemory.HeaterTempOff_write( 755 );
+//  InternalMemory.StdLightsOnHour_write( 8 );
+//  InternalMemory.StdLightsOnMinute_write( 30 );
+//  InternalMemory.StdLightsOffHour_write( 19 );
+//  InternalMemory.StdLightsOffMinute_write( 0 );
+//  
+//  InternalMemory.HeaterTempOn_write( 780 );
+//  InternalMemory.HeaterTempOff_write( 790 );
+  InternalMemory.OverheatTemp_write( 850 );
 
 }
 
-////// Place global variable code above here
-
-
 void setup()
 {
-  // This must be the first line
-  ReefAngel.Init();  //Initialize controller
-  ReefAngel.AddStandardMenu();
-  ReefAngel.Use2014Screen();
+    // This must be the first line
+    ReefAngel.Init();  //Initialize controller
+    ReefAngel.Use2014Screen();  // Let's use 2014 Screen 
+    // Ports toggled in Feeding Mode
+    ReefAngel.FeedingModePorts = 0;
+    // Ports toggled in Water Change Mode
+    ReefAngel.WaterChangePorts = Port1Bit;
+    // Ports toggled when Lights On / Off menu entry selected
+    ReefAngel.LightsOnPorts = Port2Bit | Port3Bit | Port4Bit;
+    // Ports turned off when Overheat temperature exceeded
+    ReefAngel.OverheatShutoffPorts = Port3Bit | Port8Bit;
+    // Use T1 probe as temperature and overheat functions
+    ReefAngel.TempProbe = T1_PROBE;
+    ReefAngel.OverheatProbe = T1_PROBE;
+    // Set the Overheat temperature setting
+    InternalMemory.OverheatTemp_write( 850 );
 
-  // Ports toggled in Feeding Mode
-  ReefAngel.FeedingModePorts = 0;
-  // Ports toggled in Water Change Mode
-  ReefAngel.WaterChangePorts = Port1Bit | Port2Bit | Port5Bit | Port7Bit;
-  // Ports toggled when Lights On / Off menu entry selected
-  ReefAngel.LightsOnPorts = Port4Bit;
-  // Ports turned off when Overheat temperature exceeded
-  ReefAngel.OverheatShutoffPorts = Port4Bit | Port6Bit | Port8Bit;
-  // Use T1 probe as temperature and overheat functions
-  ReefAngel.TempProbe = T1_PROBE;
-  ReefAngel.OverheatProbe = T1_PROBE;
-  // Set the Overheat temperature setting
-  InternalMemory.OverheatTemp_write( 810 );
 
-  // Ports that are always on, all of them for now
-  ReefAngel.Relay.On( Port1 );
-  ReefAngel.Relay.On( Port2 );
-  ReefAngel.Relay.On( Port3 );
-  ReefAngel.Relay.On( Port4 );
-  ReefAngel.Relay.On( Port6 );
-  
-  initMemory();
+    // Ports that are always on
+    ReefAngel.Relay.On( Port1 );
+    ReefAngel.Relay.On( Port5 );
 
+    ////// Place additional initialization code below here
+    initMemory();
+
+    ////// Place additional initialization code above here
 }
 
 void loop()
 {
-
-  //0 = UV
-  //1 = White
-  //2 = Blue
-  int uv_max = InternalMemory.read(Mem_UV_Max);
-  int white_max = InternalMemory.read(Mem_White_Max);
-  int blue_max = InternalMemory.read(Mem_Blue_Max);
-  
-  int sunrise_min = InternalMemory.StdLightsOnHour_read();
-  int sunrise_hour = InternalMemory.StdLightsOnMinute_read();
-  int sunset_min = InternalMemory.StdLightsOffHour_read();
-  int sunset_hour = InternalMemory.StdLightsOffHour_read();
-
-  if( bitRead( ReefAngel.StatusFlags, LightsOnFlag ) ){ //Turn on lights to 'full'
+    //
+    // Lights
+    //
+    int sunrise_min = InternalMemory.StdLightsOnHour_read();
+    int sunrise_hour = InternalMemory.StdLightsOnMinute_read();
+    int sunset_min = InternalMemory.StdLightsOffHour_read();
+    int sunset_hour = InternalMemory.StdLightsOffHour_read();
     
-    ReefAngel.PWM.SetChannel( 0,  uv_max); //UV
-    ReefAngel.PWM.SetChannel( 1,  white_max); //White
-    ReefAngel.PWM.SetChannel( 2,  blue_max); //Blue
+    ReefAngel.StandardLights( Port2, sunrise_hour-1, sunrise_min, sunset_hour, sunset_min+5 ); //Light fan - 5 minutes delayed off
+    ReefAngel.StandardLights( Port3, sunrise_hour-1, sunrise_min, sunset_hour-1, sunset_min ); //Day lights - 
+    ReefAngel.StandardLights( Port4, sunrise_hour, sunrise_min, sunset_hour, sunset_min ); //Actinic Lights
     
-  }else{
-
-    //Turn off drivers completely if less than the lowest possible output to lengthen lifespan of LEDs and drivers
-    if(PWMParabola(sunrise_hour, sunrise_min, sunset_hour, sunset_min, 10, white_max, 10) < 11){
-      ReefAngel.PWM.SetChannel( 1, 0 ); //White
-    }
-    else{
-      ReefAngel.PWM.SetChannel( 1, PWMParabola(sunrise_hour, sunrise_min, sunset_hour, sunset_min, 10, white_max, 10) ); //White
-    }
-
-    if(PWMParabola(sunrise_hour-2, sunrise_min, sunset_hour+2, sunset_min+30, 10, blue_max, 20) < 11){
-      ReefAngel.PWM.SetChannel( 2,  0);
-    }
-    else{
-      ReefAngel.PWM.SetChannel( 2,  PWMParabola(sunrise_hour-2, sunrise_min, sunset_hour+2, sunset_min+30, 10, blue_max, 10)); //UV
-    }
-
-
-    if( hour() >= sunset_hour && hour() < sunset_hour+1  ){
-      ReefAngel.PWM.SetChannel( 0, 12 );
-    }
-    else if(PWMParabola(sunrise_hour, sunrise_min, sunset_hour, sunset_min, 10, uv_max, 10) > 12){
-      ReefAngel.PWM.SetChannel( 0, PWMParabola(sunrise_hour, sunrise_min, sunset_hour, sunset_min, 10, uv_max, 10) );
-    }
-    else{
-      ReefAngel.PWM.SetChannel( 0, 0 );
-    }
+    //Chiller
+    ReefAngel.StandardFan( Port7, InternalMemory.ChillerTempOn_read(), InternalMemory.ChillerTempOff_read() );
     
-  }
-
-  //
-  // Auto topoff
-  //
-  if( ReefAngel.DisplayedMenu != WATERCHANGE_MODE && !ReefAngel.HighATO.IsActive() && ReefAngel.Params.PH < 850 ) {//Only run ATO if not in waterchange mode and PH < 8.5
+    //Heaters
+    ReefAngel.StandardHeater( Port8, InternalMemory.HeaterTempOn_read(), InternalMemory.HeaterTempOff_read() );
     
-    if( ReefAngel.LowATO.IsActive() ){ //ATO on until low switch is active
+    //
+    // Auto topoff
+    //
+    if( ReefAngel.DisplayedMenu != WATERCHANGE_MODE && !ReefAngel.HighATO.IsActive() && ReefAngel.Params.PH < 830 ) {//Only run ATO if not in waterchange mode and PH < 8.5
       
-      ReefAngel.Relay.On(Port7);
-      
-    }else if( (hour() >= 20 || hour() < 12) && minute() == 0 && second() < InternalMemory.read(Kalk_Dose_Interval) && (ReefAngel.Params.PH <= 828)  ){ 
-      
-      //Dose Kalk for 30 seconds every hour between 8pm and 12pm
-      //59sec for 16 hours @ 3.5gal/hr = 0.917777568 Gal/day
-      ReefAngel.Relay.On(Port7);
-      
+      if( ReefAngel.LowATO.IsActive() ){ //ATO on until low switch is active
+        ReefAngel.Relay.On(Port6);
+      }else if( (hour() >= 20 || hour() < 12) && minute() == 0 && second() < InternalMemory.read(Kalk_Dose_Interval) && (ReefAngel.Params.PH <= 828)  ){ 
+        //Dose Kalk for 30 seconds every hour between 8pm and 12pm
+        //59sec for 16 hours @ 3.5gal/hr = 0.917777568 Gal/day
+        ReefAngel.Relay.On(Port6);
+      }else {
+        ReefAngel.Relay.Off(Port6);
+      }
     }else {
-      ReefAngel.Relay.Off(Port7);
+        ReefAngel.Relay.Off(Port6);
     }
-    
-  }else {
-      ReefAngel.Relay.Off(Port7);
-  }
+  
+    //Never run ATO if high switch is active
+    if ( ReefAngel.HighATO.IsActive() ){
+      ReefAngel.Relay.Off(Port6);
+    }
 
-  //Never run ATO if high switch is active
-  if ( ReefAngel.HighATO.IsActive() ){
-    ReefAngel.Relay.Off(Port7);
-  }
-
-  //Temp settings
-  ReefAngel.StandardHeater(Port5, InternalMemory.HeaterTempOn_read(), InternalMemory.HeaterTempOff_read());
-  ReefAngel.StandardHeater(Port8, InternalMemory.HeaterTempOn_read(), InternalMemory.HeaterTempOff_read());
-
-
-  // This should always be the last line
-  ReefAngel.Portal( "cgaubuchon", "donttouchmyfish" );
-  ReefAngel.ShowInterface();
+    // This should always be the last line
+    ReefAngel.Portal( "cgaubuchon" );
+    ReefAngel.ShowInterface();
 }
 
 
